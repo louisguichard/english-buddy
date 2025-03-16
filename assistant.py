@@ -101,7 +101,7 @@ def extract_confidence(transcription):
                 {
                     "word": word["text"],
                     "confidence": word["confidence"],
-                    "is_low_confidence": word["confidence"] < 0.5,
+                    "is_low_confidence": word["confidence"] < 0.4,
                 }
             )
     return words_with_confidence
@@ -110,8 +110,18 @@ def extract_confidence(transcription):
 def generate_response(conversation_history):
     """Generate response using Llama 3.2"""
 
+    system_prompt = """You are a friendly AI assistant having a casual spoken conversation with the user in English. Main goals:
+- Keep responses informal, clear, and conversational—no formatting.
+- Help the user improve spoken English by gently correcting mistakes and suggesting natural expressions.
+- Occasionally ask the user to repeat words they've mispronounced to practice pronunciation.
+
+Example:
+User: "I yesterday go cinema and watched good movie."
+AI: "Nice! Yesterday you went to the cinema and watched a good movie? What movie did you see?"
+
+Always keep interactions concise, supportive, and enjoyable."""
+
     # Build prompt
-    system_prompt = "You are a helpful English language tutor."
     prompt = f"<|system|>\n{system_prompt}\n"
     for message in conversation_history:
         role = message["role"]
@@ -119,6 +129,12 @@ def generate_response(conversation_history):
 
         if role == "user":
             prompt += f"<|user|>\n{content}\n"
+            # Add information about low confidence words if available
+            if message["low_confidence"]:
+                low_confidence_words = ", ".join(
+                    [f"'{word}'" for word in message["low_confidence"]]
+                )
+                prompt += f"Note: The following words were not clearly pronounced: {low_confidence_words}]\n"
         elif role == "assistant":
             prompt += f"<|assistant|>\n{content}\n"
     prompt += "<|assistant|>"
@@ -163,11 +179,27 @@ def main():
 
             # Transcribe to text
             print("Processing...")
-            transcription, transcription_text = transcribe_audio(
-                audio_file
-            )  # TODO: use word-level confidence
-            conversation_history.append({"role": "user", "content": transcription_text})
+            transcription, transcription_text = transcribe_audio(audio_file)
+
+            # Extract words with low confidence
+            words_with_confidence = extract_confidence(transcription)
+            low_confidence_words = [
+                word["word"]
+                for word in words_with_confidence
+                if word["is_low_confidence"]
+            ]
+
+            conversation_history.append(
+                {
+                    "role": "user",
+                    "content": transcription_text,
+                    "low_confidence": low_confidence_words,
+                }
+            )
             print(f"You said: {transcription_text}")
+
+            if low_confidence_words:
+                print(f"Low confidence words: {', '.join(low_confidence_words)}")
 
             # Generate response
             response = generate_response(conversation_history)
@@ -181,9 +213,6 @@ def main():
         except KeyboardInterrupt:
             print("\nExiting...")
             break
-        except Exception as e:
-            print(f"Error: {str(e)}")
-            continue
 
 
 if __name__ == "__main__":
