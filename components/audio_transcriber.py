@@ -12,7 +12,7 @@ class AudioTranscriber:
     def __init__(self):
         """Initialize the Whisper model."""
         print("Loading Whisper model...")
-        self.model = whisper.load_model("tiny")
+        self.model = whisper.load_model("small")
 
     def transcribe(self, audio_file):
         """
