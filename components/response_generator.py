@@ -49,7 +49,6 @@ class ResponseGenerator:
         Returns:
             str: The generated response
         """
-        print(f"\nConversation: \n{conversation}\n")
         response = self.pipe(
             conversation,
             max_new_tokens=config.MAX_NEW_TOKENS,
