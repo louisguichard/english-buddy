@@ -1,0 +1,83 @@
+/* Basic reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.conversation-area {
+    margin-bottom: 20px;
+}
+
+.speech-block {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.user-speech {
+    background-color: #e6f7ff;
+    border-left: 5px solid #1890ff;
+}
+
+.assistant-speech {
+    background-color: #f6ffed;
+    border-left: 5px solid #52c41a;
+}
+
+.controls {
+    text-align: center;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.btn-start {
+    background-color: #52c41a; /* Green */
+}
+
+.btn-stop {
+    background-color: #f5222d; /* Red */
+}
+
+.btn-processing {
+    background-color: #1890ff; /* Blue */
+}
+
+.red-text {
+    color: red;
+    font-weight: bold;
+} 

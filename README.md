@@ -1,6 +1,6 @@
 # English Assistant
 
-A simple command-line application for practicing English conversation skills. 
+A web application for practicing English conversation skills.
 
 ## Setup
 
@@ -16,7 +16,9 @@ export HF_TOKEN="your_huggingface_token"
 
 Note: You need a Hugging Face token with access to the Llama 3.2 model.
 
-3. Run the application:
+3. Run the web application:
 ```bash
-python main.py
+python app.py
 ```
+
+Then open your browser and navigate to http://127.0.0.1:5000

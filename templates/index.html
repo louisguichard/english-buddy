@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Conversation Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>English Conversation Assistant</h1>
+        
+        <div class="conversation-area">
+            <div class="speech-block user-speech">
+                <h2>You</h2>
+                <div id="user-text"></div>
+            </div>
+            
+            <div class="speech-block assistant-speech">
+                <h2>Assistant</h2>
+                <div id="assistant-text"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="speak-button" class="btn-start">Speak</button>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html> 
