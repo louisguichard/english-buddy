@@ -36,9 +36,11 @@ class AudioTranscriber:
             transcription (dict): The Whisper transcription object
 
         Returns:
-            list of dict: List of words with their confidence scores
+            list of dict: List of words with their confidence scores and positions
         """
         words_with_confidence = []
+        position = 0
+
         for segment in transcription["segments"]:
             for word in segment["words"]:
                 words_with_confidence.append(
@@ -47,21 +49,9 @@ class AudioTranscriber:
                         "confidence": word["confidence"],
                         "is_low_confidence": word["confidence"]
                         < config.CONFIDENCE_THRESHOLD,
+                        "position": position,
                     }
                 )
+                position += 1
+
         return words_with_confidence
-
-    def get_low_confidence_words(self, transcription):
-        """
-        Get a list of words with low confidence scores.
-
-        Args:
-            transcription (dict): The Whisper transcription object
-
-        Returns:
-            list of str: List of low confidence words
-        """
-        words_with_confidence = self.extract_confidence(transcription)
-        return [
-            word["word"] for word in words_with_confidence if word["is_low_confidence"]
-        ]

@@ -42,14 +42,11 @@ def process_audio():
     # Transcribe audio
     transcription = transcriber.transcribe(temp_file)
     text = transcription["text"]
-    low_confidence_words = transcriber.get_low_confidence_words(transcription)
+    words_with_confidence = transcriber.extract_confidence(transcription)
 
     # Return transcription for display
     return jsonify(
-        {
-            "transcription": text,
-            "lowConfidenceWords": low_confidence_words,
-        }
+        {"transcription": text, "wordsWithConfidence": words_with_confidence}
     )
 
 
@@ -61,11 +58,12 @@ def generate_response():
     # Get transcription data
     data = request.json
     text = data.get("transcription")
-    low_confidence_words = data.get("lowConfidenceWords", [])
-
-    # Add to conversation history
+    words_with_confidence = data.get("wordsWithConfidence", [])
+    low_confidence_words = [
+        word["word"] for word in words_with_confidence if word["is_low_confidence"]
+    ]
     if low_confidence_words:
-        user_content = f"{text}\nNote: The following words were not clearly pronounced and understood: {', '.join(low_confidence_words)}"
+        user_content = f"{text}\nNote to the assistant: The following words were mispronounced and may have been mistranscribed: {', '.join(low_confidence_words)}"
     else:
         user_content = text
 

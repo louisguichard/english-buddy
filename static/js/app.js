@@ -119,8 +119,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const transcriptionData = await transcriptionResponse.json();
             
-            // Display transcription with mispronounced words in red immediately
-            displayTranscription(transcriptionData.transcription, transcriptionData.lowConfidenceWords);
+            // Display transcription with mispronounced words in red
+            displayTranscription(transcriptionData.transcription, transcriptionData.wordsWithConfidence);
             
             // Step 2: Generate response
             const responseResponse = await fetch('/api/generate-response', {
@@ -157,25 +157,87 @@ document.addEventListener('DOMContentLoaded', function() {
         speakButton.classList.add('btn-start');
     }
     
-    function displayTranscription(text, lowConfidenceWords) {
+    function displayTranscription(text, wordsWithConfidence) {
         if (!text) return;
         
-        // If there are no low confidence words, just display the text
-        if (!lowConfidenceWords || lowConfidenceWords.length === 0) {
-            userTextElement.textContent = text;
-            return;
-        }
         
-        // Otherwise, highlight the low confidence words in red
-        let displayText = text;
+        // Split the text into individual tokens (words and spacing)
+        // This regex matches words while preserving punctuation separately
+        const tokens = text.match(/[\w']+|[.,!?;:""''\-–—()]|\s+/g) || [];
         
-        // Replace each low confidence word with a span with red color
-        lowConfidenceWords.forEach(word => {
-            const regex = new RegExp(`\\b${word}\\b`, 'gi');
-            displayText = displayText.replace(regex, `<span class="red-text">${word}</span>`);
+        // Combine tokens to rebuild words with their surrounding punctuation
+        const words = [];
+        let currentWord = '';
+        let wordIndex = 0;
+        
+        tokens.forEach(token => {
+            if (/\s+/.test(token)) {
+                // If we have a current word, push it to words array and reset
+                if (currentWord) {
+                    words.push({
+                        word: currentWord,
+                        index: wordIndex++
+                    });
+                    currentWord = '';
+                }
+                // Add space as a separate entry
+                words.push({
+                    word: token,
+                    isSpace: true
+                });
+            } else if (/[.,!?;:""''\-–—()]/.test(token)) {
+                // If it's punctuation, add it to current word if exists, otherwise treat as standalone
+                if (currentWord) {
+                    currentWord += token;
+                } else {
+                    words.push({
+                        word: token,
+                        isPunctuation: true
+                    });
+                }
+            } else {
+                // It's a regular word
+                currentWord += token;
+            }
         });
         
-        userTextElement.innerHTML = displayText;
+        // Add any remaining word
+        if (currentWord) {
+            words.push({
+                word: currentWord,
+                index: wordIndex++
+            });
+        }
+        
+        // Create a map of words to highlight
+        const wordsToHighlight = {};
+        wordsWithConfidence.forEach(wordInfo => {
+            if (wordInfo.is_low_confidence) {
+                wordsToHighlight[wordInfo.position] = wordInfo.word;
+            }
+        });
+        
+        // Create the display text with highlights
+        const highlightedText = words.map(item => {
+            if (item.isSpace) {
+                return item.word; // Return spaces as is
+            } else if (item.isPunctuation) {
+                return item.word; // Return punctuation as is
+            } else if (item.index in wordsToHighlight) {
+                // Extract actual word part without punctuation
+                const wordPart = item.word.match(/[\w']+/)[0];
+                const beforePunctuation = item.word.split(wordPart)[0] || '';
+                const afterPunctuation = item.word.split(wordPart)[1] || '';
+                
+                // Only highlight the word part, not the punctuation
+                return beforePunctuation + 
+                       `<span class="red-text">${wordPart}</span>` + 
+                       afterPunctuation;
+            }
+            return item.word;
+        }).join('');
+        
+        userTextElement.innerHTML = highlightedText;
     }
     
     function displayAssistantResponse(text) {
