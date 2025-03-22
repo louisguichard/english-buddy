@@ -80,4 +80,17 @@ button:hover {
 .red-text {
     color: red;
     font-weight: bold;
+}
+
+/* Styles for clickable words */
+.user-word, .ai-word {
+    cursor: pointer;
+}
+
+.user-word:hover {
+    text-decoration: underline;
+}
+
+.ai-word:hover {
+    text-decoration: underline;
 } 

@@ -13,6 +13,7 @@ class AudioTranscriber:
         """Initialize the Whisper model."""
         print("Loading Whisper model...")
         self.model = whisper.load_model("small")
+        self.words = None
 
     def transcribe(self, audio_file):
         """
@@ -28,9 +29,9 @@ class AudioTranscriber:
         transcription = whisper.transcribe(self.model, audio, language="en")
         return transcription
 
-    def extract_confidence(self, transcription):
+    def extract_words(self, transcription):
         """
-        Extract confidence scores for each word in the transcription.
+        Extract words with their confidence scores and timing information.
 
         Args:
             transcription (dict): The Whisper transcription object
@@ -50,8 +51,11 @@ class AudioTranscriber:
                         "is_low_confidence": word["confidence"]
                         < config.CONFIDENCE_THRESHOLD,
                         "position": position,
+                        "start": word["start"],
+                        "end": word["end"],
                     }
                 )
                 position += 1
 
+        self.words = words_with_confidence
         return words_with_confidence

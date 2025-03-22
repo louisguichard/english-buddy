@@ -2,7 +2,7 @@
 Main application for the English conversation assistant.
 """
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 import base64
 from components.audio_transcriber import AudioTranscriber
 from components.response_generator import ResponseGenerator
@@ -42,12 +42,10 @@ def process_audio():
     # Transcribe audio
     transcription = transcriber.transcribe(temp_file)
     text = transcription["text"]
-    words_with_confidence = transcriber.extract_confidence(transcription)
+    words = transcriber.extract_words(transcription)
 
     # Return transcription for display
-    return jsonify(
-        {"transcription": text, "wordsWithConfidence": words_with_confidence}
-    )
+    return jsonify({"transcription": text, "words": words})
 
 
 @app.route("/api/generate-response", methods=["POST"])
@@ -58,9 +56,8 @@ def generate_response():
     # Get transcription data
     data = request.json
     text = data.get("transcription")
-    words_with_confidence = data.get("wordsWithConfidence", [])
     low_confidence_words = [
-        word["word"] for word in words_with_confidence if word["is_low_confidence"]
+        word["word"] for word in transcriber.words if word["is_low_confidence"]
     ]
     if low_confidence_words:
         user_content = f"{text}\nNote to the assistant: The following words were mispronounced and may have been mistranscribed: {', '.join(low_confidence_words)}"
@@ -80,6 +77,48 @@ def generate_response():
         synthesizer.speak(response)
 
     return resp
+
+
+@app.route("/api/play-user-word", methods=["POST"])
+def play_user_word():
+    """Play a specific user word from the last recording."""
+
+    # Get word position from client
+    data = request.json
+    word_info = data.get("wordInfo")
+    position = word_info.get("position")
+
+    # Find word segment
+    word_segment = None
+    for word_data in transcriber.words:
+        if word_data["position"] == position:
+            buffer = 0.2  # 200ms buffer
+            word_segment = {
+                "word": word_data["word"],
+                "start": word_data["start"] - buffer,
+                "end": word_data["end"] + 2 * buffer,
+            }
+            break
+
+    if word_segment:
+        return jsonify({"success": True, "word_segment": word_segment})
+    else:
+        return jsonify({"error": "Word segment not found"}), 404
+
+
+@app.route("/api/play-ai-word", methods=["POST"])
+def play_ai_word():
+    """Synthesize and play a specific AI word."""
+    data = request.json
+    word = data.get("word")
+    synthesizer.speak(word)
+    return jsonify({"success": True})
+
+
+@app.route("/temp_recording.wav")
+def serve_recording():
+    """Serve the temporary recording file."""
+    return send_file("temp_recording.wav", mimetype="audio/wav")
 
 
 if __name__ == "__main__":

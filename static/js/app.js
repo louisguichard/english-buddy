@@ -120,15 +120,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const transcriptionData = await transcriptionResponse.json();
             
             // Display transcription with mispronounced words in red
-            displayTranscription(transcriptionData.transcription, transcriptionData.wordsWithConfidence);
+            displayTranscription(transcriptionData.transcription, transcriptionData.words);
             
-            // Step 2: Generate response
+            // Step 2: Generate response - only send the transcription text, not the word confidence data
             const responseResponse = await fetch('/api/generate-response', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(transcriptionData)
+                body: JSON.stringify({ 
+                    transcription: transcriptionData.transcription 
+                })
             });
             
             if (!responseResponse.ok) {
@@ -157,92 +159,197 @@ document.addEventListener('DOMContentLoaded', function() {
         speakButton.classList.add('btn-start');
     }
     
-    function displayTranscription(text, wordsWithConfidence) {
+    function displayTranscription(text, words) {
         if (!text) return;
         
-        
-        // Split the text into individual tokens (words and spacing)
-        // This regex matches words while preserving punctuation separately
-        const tokens = text.match(/[\w']+|[.,!?;:""''\-–—()]|\s+/g) || [];
-        
-        // Combine tokens to rebuild words with their surrounding punctuation
-        const words = [];
-        let currentWord = '';
-        let wordIndex = 0;
-        
-        tokens.forEach(token => {
-            if (/\s+/.test(token)) {
-                // If we have a current word, push it to words array and reset
-                if (currentWord) {
-                    words.push({
-                        word: currentWord,
-                        index: wordIndex++
-                    });
-                    currentWord = '';
-                }
-                // Add space as a separate entry
-                words.push({
-                    word: token,
-                    isSpace: true
-                });
-            } else if (/[.,!?;:""''\-–—()]/.test(token)) {
-                // If it's punctuation, add it to current word if exists, otherwise treat as standalone
-                if (currentWord) {
-                    currentWord += token;
-                } else {
-                    words.push({
-                        word: token,
-                        isPunctuation: true
-                    });
-                }
-            } else {
-                // It's a regular word
-                currentWord += token;
-            }
+        // Create a mapping of whisper words for easier lookup
+        const whisperWords = {};
+        words.forEach(wordInfo => {
+            whisperWords[wordInfo.position] = {
+                word: wordInfo.word,
+                is_low_confidence: wordInfo.is_low_confidence,
+                position: wordInfo.position
+            };
         });
         
-        // Add any remaining word
-        if (currentWord) {
-            words.push({
-                word: currentWord,
-                index: wordIndex++
-            });
+        // Convert text to HTML with clickable spans
+        let wordIndex = 0;
+        let htmlText = '';
+        let wordBuffer = '';
+        let inWord = false;
+        
+        // Process each character to create word spans
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            
+            // Check if character is part of a word (including apostrophes within words)
+            const isWordChar = /[\w']/.test(char) && 
+                              !(char === "'" && (!inWord || i === text.length - 1 || !/\w/.test(text[i+1])));
+                              
+            if (isWordChar) {
+                // Start or continue a word
+                wordBuffer += char;
+                inWord = true;
+            } else {
+                // End of word
+                if (inWord && wordBuffer.length > 0) {
+                    // Get info from whisper words if available
+                    const wordInfo = whisperWords[wordIndex] || {};
+                    const isLowConfidence = wordInfo.is_low_confidence || false;
+                    const className = isLowConfidence ? 'user-word red-text' : 'user-word';
+                    
+                    // Add the clickable word span
+                    htmlText += `<span class="${className}" data-position="${wordIndex}">${wordBuffer}</span>`;
+                    wordIndex++;
+                    wordBuffer = '';
+                    inWord = false;
+                }
+                
+                // Add the non-word character as is
+                htmlText += char;
+            }
         }
         
-        // Create a map of words to highlight
-        const wordsToHighlight = {};
-        wordsWithConfidence.forEach(wordInfo => {
-            if (wordInfo.is_low_confidence) {
-                wordsToHighlight[wordInfo.position] = wordInfo.word;
-            }
+        // Add any remaining word
+        if (wordBuffer.length > 0) {
+            const wordInfo = whisperWords[wordIndex] || {};
+            const isLowConfidence = wordInfo.is_low_confidence || false;
+            const className = isLowConfidence ? 'user-word red-text' : 'user-word';
+            htmlText += `<span class="${className}" data-position="${wordIndex}">${wordBuffer}</span>`;
+        }
+        
+        userTextElement.innerHTML = htmlText;
+        
+        // Add click event listeners to all user words
+        document.querySelectorAll('.user-word').forEach(wordElem => {
+            wordElem.addEventListener('click', function() {
+                const position = parseInt(this.getAttribute('data-position'));
+                playUserWord(position);
+            });
         });
-        
-        // Create the display text with highlights
-        const highlightedText = words.map(item => {
-            if (item.isSpace) {
-                return item.word; // Return spaces as is
-            } else if (item.isPunctuation) {
-                return item.word; // Return punctuation as is
-            } else if (item.index in wordsToHighlight) {
-                // Extract actual word part without punctuation
-                const wordPart = item.word.match(/[\w']+/)[0];
-                const beforePunctuation = item.word.split(wordPart)[0] || '';
-                const afterPunctuation = item.word.split(wordPart)[1] || '';
-                
-                // Only highlight the word part, not the punctuation
-                return beforePunctuation + 
-                       `<span class="red-text">${wordPart}</span>` + 
-                       afterPunctuation;
-            }
-            return item.word;
-        }).join('');
-        
-        userTextElement.innerHTML = highlightedText;
     }
     
     function displayAssistantResponse(text) {
-        if (text) {
-            assistantTextElement.textContent = text;
+        if (!text) return;
+        
+        // Process text character by character to properly handle contractions
+        let htmlText = '';
+        let wordBuffer = '';
+        let inWord = false;
+        
+        // Process each character to create word spans
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            
+            // Check if character is part of a word (including apostrophes within words)
+            const isWordChar = /[\w']/.test(char) && 
+                              !(char === "'" && (!inWord || i === text.length - 1 || !/\w/.test(text[i+1])));
+            
+            if (isWordChar) {
+                // Start or continue a word
+                wordBuffer += char;
+                inWord = true;
+            } else {
+                // End of word
+                if (inWord && wordBuffer.length > 0) {
+                    // Add the clickable word span
+                    htmlText += `<span class="ai-word">${wordBuffer}</span>`;
+                    wordBuffer = '';
+                    inWord = false;
+                }
+                
+                // Add the non-word character as is
+                htmlText += char;
+            }
         }
+        
+        // Add any remaining word
+        if (wordBuffer.length > 0) {
+            htmlText += `<span class="ai-word">${wordBuffer}</span>`;
+        }
+        
+        assistantTextElement.innerHTML = htmlText;
+        
+        // Add click event listeners to all AI words
+        document.querySelectorAll('.ai-word').forEach(wordElem => {
+            wordElem.addEventListener('click', function() {
+                const word = this.textContent;
+                playAiWord(word);
+            });
+        });
+    }
+    
+    async function playUserWord(position) {
+        try {
+            // Request the server to play this specific word
+            const response = await fetch('/api/play-user-word', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    wordInfo: { position: position } 
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to play word');
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.word_segment) {
+                // We got the timing information for the word
+                // Play the specific segment from the recording
+                playAudioSegment('temp_recording.wav', data.word_segment.start, data.word_segment.end);
+            }
+        } catch (error) {
+            console.error('Error playing user word:', error);
+        }
+    }
+    
+    async function playAiWord(word) {
+        try {
+            // Request the server to synthesize and play this word
+            const response = await fetch('/api/play-ai-word', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ word: word })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to play AI word');
+            }
+            
+            // The server will handle the playback
+        } catch (error) {
+            console.error('Error playing AI word:', error);
+        }
+    }
+    
+    function playAudioSegment(audioFile, startTime, endTime) {
+        // Create an audio element to play the segment
+        const audio = new Audio();
+        audio.src = '/' + audioFile;  // Make sure we have the correct path
+        
+        audio.addEventListener('loadedmetadata', () => {
+            // When loaded, set the current time to the start time
+            audio.currentTime = startTime;
+            
+            // Start playing
+            audio.play();
+            
+            // Stop after the segment duration
+            const duration = endTime - startTime;
+            setTimeout(() => {
+                audio.pause();
+            }, duration * 1000); // Convert to milliseconds
+        });
+        
+        audio.addEventListener('error', (e) => {
+            console.error('Error loading audio:', e);
+        });
     }
 }); 
