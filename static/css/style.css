@@ -93,4 +93,35 @@ button:hover {
 
 .ai-word:hover {
     text-decoration: underline;
+}
+
+/* Word definition styles */
+.definition-container {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f0f0f0;
+    border-left: 5px solid #a0a0a0;
+    border-radius: 5px;
+    display: none; /* Hidden by default */
+}
+
+.definition-container.visible {
+    display: block;
+}
+
+.definition-word {
+    font-weight: bold;
+    color: #000000;
+    margin-right: 10px;
+}
+
+.definition-text {
+    font-style: italic;
+}
+
+.definition-loading {
+    display: inline-block;
+    margin-left: 10px;
+    color: #888;
 } 

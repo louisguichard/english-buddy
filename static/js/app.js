@@ -3,6 +3,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const speakButton = document.getElementById('speak-button');
     const userTextElement = document.getElementById('user-text');
     const assistantTextElement = document.getElementById('assistant-text');
+    const definitionContainer = document.getElementById('word-definition');
+    const definitionWord = document.querySelector('.definition-word');
+    const definitionText = document.querySelector('.definition-text');
+    
+    // Save the AI response text for context in definitions
+    let currentAiResponse = '';
     
     // MediaRecorder variables
     let mediaRecorder;
@@ -15,6 +21,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function initApp() {
         // Set up button click handler
         speakButton.addEventListener('click', toggleRecording);
+        
+        // Set up definition container click to dismiss it
+        definitionContainer.addEventListener('click', function() {
+            definitionContainer.classList.remove('visible');
+        });
         
         // Initialize button style
         speakButton.classList.add('btn-start');
@@ -37,6 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Clear only the user text, keep assistant text
             userTextElement.innerHTML = '';
+            
+            // Hide word definition container
+            definitionContainer.classList.remove('visible');
             
             // Create media recorder
             mediaRecorder = new MediaRecorder(stream);
@@ -232,6 +246,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayAssistantResponse(text) {
         if (!text) return;
         
+        // Save the response for context in definitions
+        currentAiResponse = text;
+        
         // Process text character by character to properly handle contractions
         let htmlText = '';
         let wordBuffer = '';
@@ -310,8 +327,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function playAiWord(word) {
         try {
+            // Show definition container with loading indicator
+            definitionContainer.classList.add('visible');
+            definitionWord.textContent = word;
+            definitionText.innerHTML = '<span class="definition-loading">Loading definition...</span>';
+            
             // Request the server to synthesize and play this word
-            const response = await fetch('/api/play-ai-word', {
+            const playResponse = await fetch('/api/play-ai-word', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -319,13 +341,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ word: word })
             });
             
-            if (!response.ok) {
+            if (!playResponse.ok) {
                 throw new Error('Failed to play AI word');
             }
             
-            // The server will handle the playback
+            // Also get the definition
+            const defResponse = await fetch('/api/get-word-definition', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    word: word,
+                    context: currentAiResponse
+                })
+            });
+            
+            if (!defResponse.ok) {
+                throw new Error('Failed to get word definition');
+            }
+            
+            const defData = await defResponse.json();
+            definitionText.textContent = defData.definition;
+            
         } catch (error) {
             console.error('Error playing AI word:', error);
+            definitionText.textContent = 'Definition not available';
         }
     }
     

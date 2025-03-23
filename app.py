@@ -115,6 +115,16 @@ def play_ai_word():
     return jsonify({"success": True})
 
 
+@app.route("/api/get-word-definition", methods=["POST"])
+def get_word_definition():
+    """Get a definition for a specific word in context."""
+    data = request.json
+    word = data.get("word")
+    context = data.get("context")
+    definition = generator.generate_word_definition(word, context)
+    return jsonify({"definition": definition})
+
+
 @app.route("/temp_recording.wav")
 def serve_recording():
     """Serve the temporary recording file."""

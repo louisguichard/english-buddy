@@ -61,3 +61,38 @@ class ResponseGenerator:
         response_text = response[0]["generated_text"]
 
         return response_text
+
+    def generate_word_definition(self, word, context):
+        """
+        Generate a definition for a word in its context.
+
+        Args:
+            word (str): The word to define
+            context (str): The context in which the word appears (the full AI response)
+
+        Returns:
+            str: A simplified definition or explanation of the word
+        """
+        prompt = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant that provides simple, clear definitions of words in context.",
+            },
+            {
+                "role": "user",
+                "content": f'Define the word "{word}" as it is used in this context: "{context}". Keep the definition concise, at most 2 short sentences. Focus on how the word is used in this specific context. Use simple language suitable for English learners.',
+            },
+        ]
+
+        response = self.pipe(
+            prompt,
+            max_new_tokens=config.MAX_NEW_TOKENS,
+            temperature=config.TEMPERATURE,
+            top_p=config.TOP_P,
+            do_sample=True,
+            eos_token_id=self.pipe.tokenizer.eos_token_id,
+            return_full_text=False,
+        )
+
+        definition = response[0]["generated_text"]
+        return definition.strip()
