@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Save the AI response text for context in definitions
     let currentAiResponse = '';
     
+    // Cache for word definitions to avoid redundant API calls
+    let definitionsCache = {};
+    
     // MediaRecorder variables
     let mediaRecorder;
     let audioChunks = [];
@@ -249,6 +252,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Save the response for context in definitions
         currentAiResponse = text;
         
+        // Clear definitions cache when a new response is displayed
+        definitionsCache = {};
+        
         // Process text character by character to properly handle contractions
         let htmlText = '';
         let wordBuffer = '';
@@ -327,45 +333,53 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function playAiWord(word) {
         try {
-            // Show definition container with loading indicator
+            // Show definition container immediately
             definitionContainer.classList.add('visible');
             definitionWord.textContent = word;
-            definitionText.innerHTML = '<span class="definition-loading">Loading definition...</span>';
             
-            // Request the server to synthesize and play this word
-            const playResponse = await fetch('/api/play-ai-word', {
+            // Check if we already have this definition in the cache and display it immediately
+            if (definitionsCache[word]) {
+                definitionText.textContent = definitionsCache[word];
+            } else {
+                definitionText.innerHTML = '<span class="definition-loading">Loading definition...</span>';
+            }
+            
+            // Request the server to synthesize and play this word (don't await)
+            fetch('/api/play-ai-word', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ word: word })
+            }).catch(error => {
+                console.error('Error playing AI word:', error);
             });
             
-            if (!playResponse.ok) {
-                throw new Error('Failed to play AI word');
+            // Only fetch the definition if it's not already cached
+            if (!definitionsCache[word]) {
+                const defResponse = await fetch('/api/get-word-definition', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        word: word,
+                        context: currentAiResponse
+                    })
+                });
+                
+                if (!defResponse.ok) {
+                    throw new Error('Failed to get word definition');
+                }
+                
+                const defData = await defResponse.json();
+                definitionText.textContent = defData.definition;
+                
+                // Save to cache
+                definitionsCache[word] = defData.definition;
             }
-            
-            // Also get the definition
-            const defResponse = await fetch('/api/get-word-definition', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    word: word,
-                    context: currentAiResponse
-                })
-            });
-            
-            if (!defResponse.ok) {
-                throw new Error('Failed to get word definition');
-            }
-            
-            const defData = await defResponse.json();
-            definitionText.textContent = defData.definition;
-            
         } catch (error) {
-            console.error('Error playing AI word:', error);
+            console.error('Error getting word definition:', error);
             definitionText.textContent = 'Definition not available';
         }
     }
