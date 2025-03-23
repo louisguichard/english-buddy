@@ -20,6 +20,9 @@ synthesizer = SpeechSynthesizer()
 # Create an in-memory conversation history
 conversation = [{"role": "system", "content": config.SYSTEM_PROMPT}]
 
+# AI is speaking flag
+speaking = False
+
 
 @app.route("/")
 def index():
@@ -74,7 +77,10 @@ def generate_response():
     # Synthesize speech
     @resp.call_on_close
     def on_close():
+        global speaking
+        speaking = True
         synthesizer.speak(response)
+        speaking = False
 
     return resp
 
@@ -109,10 +115,16 @@ def play_user_word():
 @app.route("/api/play-ai-word", methods=["POST"])
 def play_ai_word():
     """Synthesize and play a specific AI word."""
-    data = request.json
-    word = data.get("word")
-    synthesizer.speak(word)
-    return jsonify({"success": True})
+    global speaking
+    if not speaking:
+        data = request.json
+        word = data.get("word")
+        speaking = True
+        synthesizer.speak(word)
+        speaking = False
+        return jsonify({"success": True})
+    else:
+        return jsonify({"error": "AI is already speaking"}), 400
 
 
 @app.route("/api/get-word-definition", methods=["POST"])
