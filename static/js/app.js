@@ -335,13 +335,13 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // Show definition container immediately
             definitionContainer.classList.add('visible');
-            definitionWord.textContent = word;
+            definitionWord.textContent = word.charAt(0).toUpperCase() + word.slice(1);
             
             // Check if we already have this definition in the cache and display it immediately
             if (definitionsCache[word]) {
-                definitionText.textContent = definitionsCache[word];
+                definitionText.textContent = " - " + definitionsCache[word];
             } else {
-                definitionText.innerHTML = '<span class="definition-loading">Loading definition...</span>';
+                definitionText.innerHTML = '<span class="definition-loading"> - Loading definition...</span>';
             }
             
             // Request the server to synthesize and play this word (don't await)
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 const defData = await defResponse.json();
-                definitionText.textContent = defData.definition;
+                definitionText.textContent = " - " + defData.definition;
                 
                 // Save to cache
                 definitionsCache[word] = defData.definition;

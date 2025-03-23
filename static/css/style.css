@@ -113,7 +113,6 @@ button:hover {
 .definition-word {
     font-weight: bold;
     color: #000000;
-    margin-right: 10px;
 }
 
 .definition-text {
@@ -122,6 +121,5 @@ button:hover {
 
 .definition-loading {
     display: inline-block;
-    margin-left: 10px;
     color: #888;
 } 
