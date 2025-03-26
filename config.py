@@ -4,6 +4,9 @@ Configuration settings for the English assistant application.
 
 import os
 import torch
+import dotenv
+
+dotenv.load_dotenv()
 
 
 # Model provider setting
@@ -15,6 +18,7 @@ MODEL_ID = "meta-llama/Llama-3.2-3B-Instruct"
 # OpenAI settings
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_STT_MODEL = "whisper-1"
+OPENAI_CHAT_MODEL = "gpt-4o-mini"
 
 # Device settings
 DEVICE = (

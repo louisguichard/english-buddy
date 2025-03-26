@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, send_file
 import base64
 from components.transcription import get_transcriber
-from components.response_generator import ResponseGenerator
+from components.generation import get_generator
 from components.speech_synthesizer import SpeechSynthesizer
 from feedback import FeedbackSystem
 import config
@@ -23,7 +23,7 @@ if os.getenv("FEEDBACK_ENABLED", "false").lower() == "true":
 # Initialize components
 print("Initializing components...")
 transcriber = get_transcriber(config.MODEL_PROVIDER)
-generator = ResponseGenerator()
+generator = get_generator(config.MODEL_PROVIDER)
 synthesizer = SpeechSynthesizer()
 
 # Create an in-memory conversation history

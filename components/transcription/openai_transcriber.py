@@ -13,7 +13,7 @@ class OpenAITranscriber(TranscriberBase):
     def __init__(self):
         """Initialize the OpenAI client."""
         super().__init__()
-        print("Using OpenAI Whisper API...")
+        print(f"Using OpenAI {config.OPENAI_STT_MODEL} API...")
         self.client = OpenAI(api_key=config.OPENAI_API_KEY)
         self.transcription = None
         self.word_position = 0
@@ -49,7 +49,6 @@ class OpenAITranscriber(TranscriberBase):
         self.words = []
 
         for position, word in enumerate(self.transcription.words):
-            print(word)
             self.words.append(
                 {
                     "word": word["word"],
