@@ -1,27 +1,30 @@
 """
-Speech synthesis module using Kokoro TTS.
+Local speech synthesis module using Kokoro TTS.
 """
 
 import numpy as np
-import sounddevice as sd
 from kokoro import KPipeline
 import config
+from components.synthesis.synthesizer_base import SynthesizerBase
 
 
-class SpeechSynthesizer:
-    """Class for text-to-speech conversion."""
+class LocalSynthesizer(SynthesizerBase):
+    """Class for text-to-speech conversion using local Kokoro TTS."""
 
     def __init__(self):
-        """Initialize the TTS engine."""
-        print("Loading TTS model...")
+        """Initialize the local TTS engine."""
+        print("Loading local TTS model...")
         self.tts_pipeline = KPipeline(lang_code="a")
 
-    def speak(self, text):
+    def generate_audio(self, text):
         """
-        Convert text to speech and play it.
+        Convert text to speech using local Kokoro TTS.
 
         Args:
-            text (str): The text to speak
+            text (str): The text to convert to speech
+
+        Returns:
+            numpy.ndarray: The audio data
         """
         generator = self.tts_pipeline(
             text, voice=config.TTS_VOICE, speed=config.TTS_SPEED, split_pattern=r"\n+"
@@ -37,6 +40,4 @@ class SpeechSynthesizer:
             else speech_segments[0]
         )
 
-        # Play the audio
-        sd.play(speech_output, samplerate=24000)
-        sd.wait()
+        return speech_output

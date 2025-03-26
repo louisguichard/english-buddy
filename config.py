@@ -9,16 +9,17 @@ import dotenv
 dotenv.load_dotenv()
 
 
-# Model provider setting
-MODEL_PROVIDER = "local"  # "local" or "openai"
+# Model provider
+MODEL_PROVIDER = "openai"  # "local" or "openai"
 
-# Model settings
+# Local model settings
 MODEL_ID = "meta-llama/Llama-3.2-3B-Instruct"
 
 # OpenAI settings
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_STT_MODEL = "whisper-1"
 OPENAI_CHAT_MODEL = "gpt-4o-mini"
+OPENAI_TTS_MODEL = "gpt-4o-mini-tts"
 
 # Device settings
 DEVICE = (
@@ -31,6 +32,7 @@ DEVICE = (
 
 # TTS settings
 TTS_VOICE = "af_heart"
+OPENAI_TTS_VOICE = "shimmer"
 TTS_SPEED = 1.0
 
 # System prompt for AI assistant

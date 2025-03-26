@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 import base64
 from components.transcription import get_transcriber
 from components.generation import get_generator
-from components.speech_synthesizer import SpeechSynthesizer
+from components.synthesis import get_synthesizer
 from feedback import FeedbackSystem
 import config
 
@@ -24,7 +24,7 @@ if os.getenv("FEEDBACK_ENABLED", "false").lower() == "true":
 print("Initializing components...")
 transcriber = get_transcriber(config.MODEL_PROVIDER)
 generator = get_generator(config.MODEL_PROVIDER)
-synthesizer = SpeechSynthesizer()
+synthesizer = get_synthesizer(config.MODEL_PROVIDER)
 
 # Create an in-memory conversation history
 conversation = [{"role": "system", "content": config.SYSTEM_PROMPT}]
