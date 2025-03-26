@@ -3,6 +3,7 @@ Main application for the English conversation assistant.
 """
 
 import os
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, send_file
 import base64
 from components.audio_transcriber import AudioTranscriber
@@ -11,12 +12,13 @@ from components.speech_synthesizer import SpeechSynthesizer
 from feedback import FeedbackSystem
 import config
 
+load_dotenv()
 app = Flask(__name__)
-app.debug = os.getenv("APP_ENV", "local").lower() == "local"
 
 # Initialize feedback system
-feedback_system = FeedbackSystem(exit_on_feedback=True)
-feedback_system.init_app(app, enable_in_debug=True, enable_in_prod=False)
+if os.getenv("FEEDBACK_ENABLED", "false").lower() == "true":
+    feedback_system = FeedbackSystem(exit_on_feedback=True)
+    feedback_system.init_app(app, enable_in_debug=True, enable_in_prod=True)
 
 # Initialize components
 print("Initializing components...")
