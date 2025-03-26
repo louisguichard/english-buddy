@@ -6,9 +6,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const definitionContainer = document.getElementById('word-definition');
     const definitionWord = document.querySelector('.definition-word');
     const definitionText = document.querySelector('.definition-text');
+    const replayUserButton = document.getElementById('replay-user');
+    const replayAssistantButton = document.getElementById('replay-assistant');
     
     // Save the AI response text for context in definitions
     let currentAiResponse = '';
+    // Save the user's speech for replay
+    let currentUserSpeech = '';
     
     // Cache for word definitions to avoid redundant API calls
     let definitionsCache = {};
@@ -29,6 +33,10 @@ document.addEventListener('DOMContentLoaded', function() {
         definitionContainer.addEventListener('click', function() {
             definitionContainer.classList.remove('visible');
         });
+        
+        // Set up replay buttons click handlers
+        replayUserButton.addEventListener('click', replayUserMessage);
+        replayAssistantButton.addEventListener('click', replayAssistantMessage);
         
         // Initialize button style
         speakButton.classList.add('btn-start');
@@ -136,6 +144,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const transcriptionData = await transcriptionResponse.json();
             
+            // Store the user's transcription for replay
+            currentUserSpeech = transcriptionData.transcription;
+            
             // Display transcription with mispronounced words in red
             displayTranscription(transcriptionData.transcription, transcriptionData.words);
             
@@ -202,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check if character is part of a word (including apostrophes within words)
             const isWordChar = /[\w']/.test(char) && 
                               !(char === "'" && (!inWord || i === text.length - 1 || !/\w/.test(text[i+1])));
-                              
+            
             if (isWordChar) {
                 // Start or continue a word
                 wordBuffer += char;
@@ -210,13 +221,14 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 // End of word
                 if (inWord && wordBuffer.length > 0) {
-                    // Get info from whisper words if available
-                    const wordInfo = whisperWords[wordIndex] || {};
-                    const isLowConfidence = wordInfo.is_low_confidence || false;
-                    const className = isLowConfidence ? 'user-word red-text' : 'user-word';
-                    
-                    // Add the clickable word span
-                    htmlText += `<span class="${className}" data-position="${wordIndex}">${wordBuffer}</span>`;
+                    // Check if this word exists in the whisper words and create span accordingly
+                    if (whisperWords[wordIndex]) {
+                        const wordInfo = whisperWords[wordIndex];
+                        const spanClass = wordInfo.is_low_confidence ? 'user-word red-text' : 'user-word';
+                        htmlText += `<span class="${spanClass}" data-position="${wordInfo.position}">${wordBuffer}</span>`;
+                    } else {
+                        htmlText += `<span class="user-word" data-position="${wordIndex}">${wordBuffer}</span>`;
+                    }
                     wordIndex++;
                     wordBuffer = '';
                     inWord = false;
@@ -229,15 +241,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add any remaining word
         if (wordBuffer.length > 0) {
-            const wordInfo = whisperWords[wordIndex] || {};
-            const isLowConfidence = wordInfo.is_low_confidence || false;
-            const className = isLowConfidence ? 'user-word red-text' : 'user-word';
-            htmlText += `<span class="${className}" data-position="${wordIndex}">${wordBuffer}</span>`;
+            if (whisperWords[wordIndex]) {
+                const wordInfo = whisperWords[wordIndex];
+                const spanClass = wordInfo.is_low_confidence ? 'user-word red-text' : 'user-word';
+                htmlText += `<span class="${spanClass}" data-position="${wordInfo.position}">${wordBuffer}</span>`;
+            } else {
+                htmlText += `<span class="user-word" data-position="${wordIndex}">${wordBuffer}</span>`;
+            }
         }
         
         userTextElement.innerHTML = htmlText;
         
-        // Add click event listeners to all user words
+        // Add click event listeners to all words
         document.querySelectorAll('.user-word').forEach(wordElem => {
             wordElem.addEventListener('click', function() {
                 const position = parseInt(this.getAttribute('data-position'));
@@ -405,6 +420,37 @@ document.addEventListener('DOMContentLoaded', function() {
         
         audio.addEventListener('error', (e) => {
             console.error('Error loading audio:', e);
+        });
+    }
+    
+    // Function to replay the entire user message
+    function replayUserMessage() {
+        if (!currentUserSpeech) {
+            console.log('No user speech to replay');
+            return;
+        }
+        
+        // Create an audio element to play the full recording
+        const audio = new Audio();
+        audio.src = '/temp_recording.wav';  // Use the original recording
+        audio.play();
+    }
+    
+    // Function to replay the entire assistant message
+    function replayAssistantMessage() {
+        if (!currentAiResponse) {
+            console.log('No assistant response to replay');
+            return;
+        }
+        
+        fetch('/api/play-ai-word', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ word: currentAiResponse })
+        }).catch(error => {
+            console.error('Error replaying assistant message:', error);
         });
     }
 }); 

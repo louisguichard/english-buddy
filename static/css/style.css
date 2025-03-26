@@ -77,6 +77,22 @@ button:hover {
     background-color: #1890ff; /* Blue */
 }
 
+/* Replay button styles */
+.replay-button {
+    background-color: transparent;
+    color: #1890ff;
+    padding: 2px 5px;
+    font-size: 14px;
+    vertical-align: middle;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.replay-button:hover {
+    color: #096dd9;
+    background-color: #e6f7ff;
+}
+
 .red-text {
     color: red;
     font-weight: bold;
