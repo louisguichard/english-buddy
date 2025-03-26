@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, send_file
 import base64
-from components.audio_transcriber import AudioTranscriber
+from components.transcription import get_transcriber
 from components.response_generator import ResponseGenerator
 from components.speech_synthesizer import SpeechSynthesizer
 from feedback import FeedbackSystem
@@ -22,7 +22,7 @@ if os.getenv("FEEDBACK_ENABLED", "false").lower() == "true":
 
 # Initialize components
 print("Initializing components...")
-transcriber = AudioTranscriber()
+transcriber = get_transcriber(config.MODEL_PROVIDER)
 generator = ResponseGenerator()
 synthesizer = SpeechSynthesizer()
 
@@ -52,9 +52,8 @@ def process_audio():
         f.write(audio_binary)
 
     # Transcribe audio
-    transcription = transcriber.transcribe(temp_file)
-    text = transcription["text"]
-    words = transcriber.extract_words(transcription)
+    text = transcriber.transcribe(temp_file)
+    words = transcriber.extract_words()
 
     # Return transcription for display
     return jsonify({"transcription": text, "words": words})

@@ -1,50 +1,50 @@
 """
-Speech transcription module using Whisper.
+Local speech transcription module using Whisper.
 """
 
 import whisper_timestamped as whisper
 import config
+from components.transcription.transcriber_base import TranscriberBase
 
 
-class AudioTranscriber:
-    """Class for transcribing speech to text using Whisper."""
+class LocalTranscriber(TranscriberBase):
+    """Class for transcribing speech to text using local Whisper model."""
 
     def __init__(self):
-        """Initialize the Whisper model."""
-        print("Loading Whisper model...")
+        """Initialize the local Whisper model."""
+        super().__init__()
+        print("Loading local Whisper model...")
         self.model = whisper.load_model("small")
+        self.transcription = None
         self.words = None
 
     def transcribe(self, audio_file):
         """
-        Transcribe an audio file to text.
+        Transcribe an audio file to text using local Whisper.
 
         Args:
             audio_file (str): Path to the audio file
 
         Returns:
-            dict: The full transcription object
+            str: The transcribed text
         """
         audio = whisper.load_audio(audio_file)
-        transcription = whisper.transcribe(self.model, audio, language="en")
-        return transcription
+        self.transcription = whisper.transcribe(self.model, audio, language="en")
+        return self.transcription["text"]
 
-    def extract_words(self, transcription):
+    def extract_words(self):
         """
         Extract words with their confidence scores and timing information.
-
-        Args:
-            transcription (dict): The Whisper transcription object
 
         Returns:
             list of dict: List of words with their confidence scores and positions
         """
-        words_with_confidence = []
+        self.words = []
         position = 0
 
-        for segment in transcription["segments"]:
+        for segment in self.transcription["segments"]:
             for word in segment["words"]:
-                words_with_confidence.append(
+                self.words.append(
                     {
                         "word": word["text"],
                         "confidence": word["confidence"],
@@ -57,5 +57,4 @@ class AudioTranscriber:
                 )
                 position += 1
 
-        self.words = words_with_confidence
-        return words_with_confidence
+        return self.words
