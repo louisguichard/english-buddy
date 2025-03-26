@@ -2,6 +2,7 @@
 Main application for the English conversation assistant.
 """
 
+import os
 from flask import Flask, render_template, request, jsonify, send_file
 import base64
 from components.audio_transcriber import AudioTranscriber
@@ -11,6 +12,7 @@ from feedback import FeedbackSystem
 import config
 
 app = Flask(__name__)
+app.debug = os.getenv("APP_ENV", "local").lower() == "local"
 
 # Initialize feedback system
 feedback_system = FeedbackSystem(exit_on_feedback=True)
