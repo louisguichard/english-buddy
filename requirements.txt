@@ -6,3 +6,4 @@ sounddevice==0.5.1
 torch==2.6.0
 transformers @ git+https://github.com/huggingface/transformers@46350f5eae87ac1d168ddfdc57a0b39b64b9a029
 whisper-timestamped==1.15.8
+cursor-feedback @ git+https://github.com/louisguichard/cursor-feedback.git

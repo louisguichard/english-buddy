@@ -7,9 +7,14 @@ import base64
 from components.audio_transcriber import AudioTranscriber
 from components.response_generator import ResponseGenerator
 from components.speech_synthesizer import SpeechSynthesizer
+from feedback import FeedbackSystem
 import config
 
 app = Flask(__name__)
+
+# Initialize feedback system
+feedback_system = FeedbackSystem(exit_on_feedback=True)
+feedback_system.init_app(app, enable_in_debug=True, enable_in_prod=False)
 
 # Initialize components
 print("Initializing components...")
