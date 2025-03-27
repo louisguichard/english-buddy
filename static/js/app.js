@@ -8,9 +8,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const definitionText = document.querySelector('.definition-text');
     const replayUserButton = document.getElementById('replay-user');
     const replayAssistantButton = document.getElementById('replay-assistant');
+    const rephraseUserButton = document.getElementById('rephrase-user');
+    const rephrasedTextContainer = document.getElementById('rephrased-text');
     
-    // Save the AI response text for context in definitions
+    // Save the current and previous AI responses for context
     let currentAiResponse = '';
+    let previousAiResponse = '';
+    
     // Save the user's speech for replay
     let currentUserSpeech = '';
     
@@ -38,6 +42,14 @@ document.addEventListener('DOMContentLoaded', function() {
         replayUserButton.addEventListener('click', replayUserMessage);
         replayAssistantButton.addEventListener('click', replayAssistantMessage);
         
+        // Set up rephrase button click handler
+        rephraseUserButton.addEventListener('click', requestRephrase);
+        
+        // Set up rephrased text container click to dismiss it
+        rephrasedTextContainer.addEventListener('click', function() {
+            rephrasedTextContainer.classList.remove('visible');
+        });
+        
         // Initialize button style
         speakButton.classList.add('btn-start');
     }
@@ -62,6 +74,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Hide word definition container
             definitionContainer.classList.remove('visible');
+            
+            // Hide rephrased text container
+            rephrasedTextContainer.classList.remove('visible');
+            rephrasedTextContainer.innerHTML = '';
             
             // Create media recorder
             mediaRecorder = new MediaRecorder(stream);
@@ -89,6 +105,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function stopRecording() {
         if (!mediaRecorder) return;
+        
+        // Before clearing, save the current AI response as previous
+        previousAiResponse = currentAiResponse;
         
         // Clear assistant text when stopping the recording
         assistantTextElement.innerHTML = '';
@@ -396,6 +415,60 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error getting word definition:', error);
             definitionText.textContent = 'Definition not available';
+        }
+    }
+    
+    async function requestRephrase() {
+        try {
+            // Only attempt to rephrase if we have user text
+            if (!currentUserSpeech) {
+                console.log('No user speech to rephrase');
+                return;
+            }
+            
+            // Show loading state
+            rephraseUserButton.disabled = true;
+            rephrasedTextContainer.classList.add('visible');
+            rephrasedTextContainer.innerHTML = '<span class="rephrased-loading">Getting rephrasing suggestions...</span>';
+            
+            // Request rephrasing from the server
+            // Use previousAiResponse for context, not currentAiResponse
+            const response = await fetch('/api/rephrase-text', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    text: currentUserSpeech,
+                    last_ai_response: previousAiResponse
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Server error during rephrasing');
+            }
+            
+            const data = await response.json();
+            
+            // Display the result
+            if (data.needs_rephrasing && data.rephrased_text) {
+                // Show the rephrased text
+                rephrasedTextContainer.textContent = data.rephrased_text;
+                rephrasedTextContainer.classList.add('visible');
+            } else {
+                // Show a success message
+                rephrasedTextContainer.textContent = 'Your sentence was already well-formed! Good job!';
+                rephrasedTextContainer.classList.add('visible');
+            }
+            
+            // Re-enable the button
+            rephraseUserButton.disabled = false;
+            
+        } catch (error) {
+            console.error('Error getting rephrasing:', error);
+            rephrasedTextContainer.innerHTML = '<span class="rephrased-loading">Could not get rephrasing suggestions. Please try again.</span>';
+            rephrasedTextContainer.classList.add('visible');
+            rephraseUserButton.disabled = false;
         }
     }
     

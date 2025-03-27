@@ -61,3 +61,44 @@ class OpenAIGenerator(GeneratorBase):
         )
 
         return response.choices[0].message.content
+
+    def generate_rephrase(self, text, last_ai_response=None):
+        """
+        Generate a rephrased version of the user's text that is more grammatically correct.
+
+        Args:
+            text (str): The user's text to rephrase
+            last_ai_response (str, optional): The last AI response for context
+
+        Returns:
+            dict: {
+                'needs_rephrasing': bool - whether the text needs rephrasing
+                'rephrased_text': str - the rephrased text (if needed)
+            }
+        """
+        system_content = config.REPHRASING_PROMPT
+        if last_ai_response:
+            system_content += (
+                f'\nHere is the last AI response for context: "{last_ai_response}"'
+            )
+
+        prompt = [
+            {
+                "role": "system",
+                "content": system_content,
+            },
+            {
+                "role": "user",
+                "content": text,
+            },
+        ]
+
+        response = self.client.chat.completions.create(
+            model=config.OPENAI_CHAT_MODEL,
+            messages=prompt,
+            max_tokens=config.MAX_NEW_TOKENS,
+            response_format={"type": "json_object"},
+        )
+
+        response_text = response.choices[0].message.content
+        return self.process_rephrase_response(response_text)

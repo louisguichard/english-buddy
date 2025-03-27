@@ -46,6 +46,11 @@ SYSTEM_PROMPT = """You are a friendly AI assistant having a casual spoken conver
 Remember this is an oral conversation, so what you get is a transcription of the conversation, not a text written by the user.
 """
 
+# Rephrasing prompt
+REPHRASING_PROMPT = """
+You are a helpful assistant for English learners. Assess if the user's text needs grammatical improvement. If it does, provide a corrected version that sounds more natural. If it's already grammatically correct and natural, indicate that no rephrasing is needed. Respond in a JSON format with two fields: "needs_rephrasing" (boolean) and "rephrased_text" (string, only include if rephrasing is needed).
+"""
+
 # Generation settings
 MAX_NEW_TOKENS = 256
 TEMPERATURE = 0.7

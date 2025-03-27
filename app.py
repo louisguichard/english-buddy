@@ -148,6 +148,19 @@ def get_word_definition():
     return jsonify({"definition": definition})
 
 
+@app.route("/api/rephrase-text", methods=["POST"])
+def rephrase_text():
+    """Rephrase user text to improve grammar and naturalness."""
+    data = request.json
+    text = data.get("text")
+    last_ai_response = data.get("last_ai_response")
+
+    # Generate rephrasing suggestion
+    result = generator.generate_rephrase(text, last_ai_response)
+
+    return jsonify(result)
+
+
 @app.route("/temp_recording.wav")
 def serve_recording():
     """Serve the temporary recording file."""

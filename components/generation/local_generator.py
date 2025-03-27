@@ -94,3 +94,47 @@ class LocalGenerator(GeneratorBase):
 
         definition = response[0]["generated_text"]
         return definition.strip()
+
+    def generate_rephrase(self, text, last_ai_response=None):
+        """
+        Generate a rephrased version of the user's text that is more grammatically correct.
+
+        Args:
+            text (str): The user's text to rephrase
+            last_ai_response (str, optional): The last AI response for context
+
+        Returns:
+            dict: {
+                'needs_rephrasing': bool - whether the text needs rephrasing
+                'rephrased_text': str - the rephrased text (if needed)
+            }
+        """
+        system_content = config.REPHRASING_PROMPT
+        if last_ai_response:
+            system_content += (
+                f'\nHere is the last AI response for context: "{last_ai_response}"'
+            )
+
+        prompt = [
+            {
+                "role": "system",
+                "content": system_content,
+            },
+            {
+                "role": "user",
+                "content": text,
+            },
+        ]
+
+        response = self.pipe(
+            prompt,
+            max_new_tokens=config.MAX_NEW_TOKENS,
+            temperature=config.TEMPERATURE,
+            top_p=config.TOP_P,
+            do_sample=True,
+            eos_token_id=self.pipe.tokenizer.eos_token_id,
+            return_full_text=False,
+        )
+
+        response_text = response[0]["generated_text"]
+        return self.process_rephrase_response(response_text)
