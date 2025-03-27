@@ -83,11 +83,13 @@ def generate_response():
     resp = jsonify({"response": response})
 
     # Synthesize speech
+    audio = synthesizer.generate_audio(response)
+
     @resp.call_on_close
     def on_close():
         global speaking
         speaking = True
-        synthesizer.speak(response)
+        synthesizer.speak(audio)
         speaking = False
 
     return resp
@@ -127,8 +129,9 @@ def play_ai_word():
     if not speaking:
         data = request.json
         word = data.get("word")
+        audio = synthesizer.generate_audio(word)
         speaking = True
-        synthesizer.speak(word)
+        synthesizer.speak(audio)
         speaking = False
         return jsonify({"success": True})
     else:

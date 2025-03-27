@@ -22,13 +22,12 @@ class SynthesizerBase(ABC):
         """
         pass
 
-    def speak(self, text):
+    def speak(self, audio_data):
         """
-        Convert text to speech and play it.
+        Play the audio data.
 
         Args:
-            text (str): The text to speak
+            audio_data (numpy.ndarray): The audio data to play
         """
-        audio_data = self.generate_audio(text)
         sd.play(audio_data, samplerate=24000)
         sd.wait()
