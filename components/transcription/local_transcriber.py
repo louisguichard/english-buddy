@@ -14,7 +14,7 @@ class LocalTranscriber(TranscriberBase):
         """Initialize the local Whisper model."""
         super().__init__()
         print("Loading local Whisper model...")
-        self.model = whisper.load_model("small")
+        self.model = whisper.load_model(config.LOCAL_STT_SIZE)
         self.transcription = None
         self.words = None
 

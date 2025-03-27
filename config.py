@@ -10,10 +10,11 @@ dotenv.load_dotenv()
 
 
 # Model provider
-MODEL_PROVIDER = "openai"  # "local" or "openai"
+MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "local")
 
 # Local model settings
 MODEL_ID = "meta-llama/Llama-3.2-3B-Instruct"
+LOCAL_STT_SIZE = "base"  # "small", "tiny", "base"
 
 # OpenAI settings
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

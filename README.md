@@ -33,10 +33,9 @@ export HF_TOKEN="your_huggingface_token"
 
 If using OpenAI APIs:
 ```bash
+export MODEL_PROVIDER="openai"
 export OPENAI_API_KEY="your_openai_api_key"
 ```
-
-Note: You will have to choose your model provider by editing the `config.py` file.
 
 3. Run the web application:
 ```bash
